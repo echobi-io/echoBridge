@@ -1,0 +1,16 @@
+{
+  "name": "echobridge",
+  "version": "0.1.0",
+  "description": "Sage 50c ODBC connector API for Supabase Edge Functions",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "odbc": "^2.4.9"
+  }
+}
