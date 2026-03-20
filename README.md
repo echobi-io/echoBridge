@@ -4,6 +4,8 @@ Production-focused Sage 50c connector that exposes allow-listed Sage tables over
 
 ## The easiest way to install it
 
+Before you begin, see `INSTALL_PREREQUISITES.md` for a checklist of everything you need installed first, including official download/support links for Sage, Node.js, Supabase CLI, and NSSM.
+
 If your Sage 50c machine is Windows, **yes: an installer script is the best approach**. Sage 50c ODBC deployments are usually Windows-hosted, and a PowerShell installer lets us automate the repetitive parts safely.
 
 This repository now includes:
