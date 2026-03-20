@@ -200,39 +200,89 @@ GET /v1/tables/CUSTOMER/rows?columns=ACCOUNT_REF,NAME&orderBy=ACCOUNT_REF&orderD
 
 ## Supabase setup
 
+### The key thing to understand
+
+Your Supabase Edge Function does **not** run on the Sage machine. It runs in Supabase's cloud.
+So for the edge function to connect to echoBridge, `SAGE_CONNECTOR_URL` must point to a real HTTPS endpoint that the function can reach from outside the Sage server.
+
+This will **not** work from Supabase by itself:
+
+- `http://127.0.0.1:8787`
+
+That only works on the Sage server itself.
+
+You need one of these instead:
+
+- `https://sage-connector.yourdomain.com` behind a reverse proxy,
+- a secure VPN/private tunnel URL,
+- another client-approved private connectivity path reachable from Supabase.
+
 ### What values from the installer go into Supabase?
 
 If you used HMAC mode, copy these values from the installer output into Supabase secrets:
 
 - `SAGE_CONNECTOR_URL`
+- `SAGE_CONNECTOR_AUTH_MODE=hmac`
 - `SAGE_CONNECTOR_CLIENT_ID`
 - `SAGE_CONNECTOR_SHARED_SECRET`
 
 If you used API key mode instead, store:
 
 - `SAGE_CONNECTOR_URL`
+- `SAGE_CONNECTOR_AUTH_MODE=api-key`
 - `SAGE_CONNECTOR_API_KEY`
+
+### Step-by-step: connect an Edge Function to echoBridge
+
+1. Install and start echoBridge on the Sage/ODBC host.
+2. Put HTTPS in front of echoBridge so it is reachable from Supabase.
+3. Confirm the connector URL works from outside the Sage host.
+4. Save the connector URL and auth values into Supabase secrets.
+5. Deploy the example edge function in `examples/supabase-edge/sage-proxy.ts`.
+6. Call the function with `action=rows&table=CUSTOMER` or another allow-listed table.
 
 ### Example Supabase CLI commands
 
 ```bash
 supabase secrets set \
   SAGE_CONNECTOR_URL=https://sage-connector.example.com \
+  SAGE_CONNECTOR_AUTH_MODE=hmac \
   SAGE_CONNECTOR_CLIENT_ID=supabase-edge \
   SAGE_CONNECTOR_SHARED_SECRET=replace-with-your-secret
 
 supabase functions deploy sage-proxy --no-verify-jwt
 ```
 
+### How to call the example function
+
+Get rows from a Sage table:
+
+```bash
+curl "https://<project-ref>.functions.supabase.co/sage-proxy?action=rows&table=CUSTOMER&limit=100"
+```
+
+List tables visible through echoBridge:
+
+```bash
+curl "https://<project-ref>.functions.supabase.co/sage-proxy?action=tables"
+```
+
+Inspect a Sage table schema:
+
+```bash
+curl "https://<project-ref>.functions.supabase.co/sage-proxy?action=schema&table=CUSTOMER"
+```
+
+Read connector metadata:
+
+```bash
+curl "https://<project-ref>.functions.supabase.co/sage-proxy?action=metadata"
+```
+
 ### Edge Function example
 
-The repository includes `examples/supabase-edge/sage-proxy.ts`.
-It:
-
-- reads `table` and `limit` from the incoming request,
-- signs the request with HMAC,
-- calls `GET /v1/tables/:table/rows`,
-- returns the JSON response.
+The repository includes `examples/supabase-edge/sage-proxy.ts` plus `examples/supabase-edge/README.md`.
+The proxy supports `action=metadata`, `action=tables`, `action=schema`, and row reads via `action=rows`, and it can authenticate to echoBridge using either HMAC or API key mode depending on the Supabase secrets you configure.
 
 ## Security checklist
 
