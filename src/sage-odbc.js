@@ -1,3 +1,5 @@
+import { HttpError } from './errors.js';
+
 export class SageOdbcClient {
   constructor(connectionString) {
     this.connectionString = connectionString;
@@ -6,7 +8,10 @@ export class SageOdbcClient {
 
   async connect() {
     if (!this.connectionPromise) {
-      this.connectionPromise = this.#openConnection();
+      this.connectionPromise = this.#openConnection().catch((error) => {
+        this.connectionPromise = undefined;
+        throw error;
+      });
     }
 
     return this.connectionPromise;
@@ -18,29 +23,64 @@ export class SageOdbcClient {
     try {
       ({ default: odbc } = await import('odbc'));
     } catch (error) {
-      throw new Error(
+      throw new HttpError(
+        500,
+        'odbc_not_installed',
         'The optional "odbc" package is not installed. Run "npm install" on the host where this service will access Sage 50c.',
-        { cause: error },
+        { cause: error instanceof Error ? error.message : 'module load failure' },
       );
     }
 
-    return odbc.connect(this.connectionString);
+    try {
+      return await odbc.connect(this.connectionString);
+    } catch (error) {
+      throw new HttpError(
+        502,
+        'odbc_connection_failed',
+        'Failed to connect to the Sage 50c ODBC data source',
+        { cause: error instanceof Error ? error.message : 'unknown ODBC connection failure' },
+      );
+    }
+  }
+
+  async healthcheck() {
+    const connection = await this.connect();
+    await connection.query('SELECT 1 AS healthy');
+    return { status: 'ok' };
   }
 
   async listTables() {
     const connection = await this.connect();
-    return connection.tables(null, null, null, 'TABLE');
+    try {
+      return await connection.tables(null, null, null, 'TABLE');
+    } catch (error) {
+      throw new HttpError(502, 'odbc_query_failed', 'Failed to list Sage tables', {
+        cause: error instanceof Error ? error.message : 'unknown listTables failure',
+      });
+    }
   }
 
   async describeTable(tableName) {
     const connection = await this.connect();
-    return connection.columns(null, null, tableName, null);
+    try {
+      return await connection.columns(null, null, tableName, null);
+    } catch (error) {
+      throw new HttpError(502, 'odbc_query_failed', `Failed to describe Sage table ${tableName}`, {
+        cause: error instanceof Error ? error.message : 'unknown describeTable failure',
+      });
+    }
   }
 
   async query(sql) {
     const connection = await this.connect();
-    const rows = await connection.query(sql);
-    return { rows };
+    try {
+      const rows = await connection.query(sql);
+      return { rows };
+    } catch (error) {
+      throw new HttpError(502, 'odbc_query_failed', 'Failed to execute Sage query', {
+        cause: error instanceof Error ? error.message : 'unknown query failure',
+      });
+    }
   }
 
   async close() {

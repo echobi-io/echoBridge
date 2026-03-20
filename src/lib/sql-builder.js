@@ -1,21 +1,38 @@
+import { HttpError } from '../errors.js';
 import { ensureTableAllowed, normalizeColumnName, normalizeSortDirection } from './query-guards.js';
+
+function normalizePositiveInteger(value, fieldName, defaultValue) {
+  const candidate = value ?? defaultValue;
+  const parsed = Number.parseInt(String(candidate), 10);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new HttpError(400, 'invalid_request', `${fieldName} must be a positive integer`);
+  }
+
+  return parsed;
+}
+
+function normalizeNonNegativeInteger(value, fieldName, defaultValue) {
+  const candidate = value ?? defaultValue;
+  const parsed = Number.parseInt(String(candidate), 10);
+
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new HttpError(400, 'invalid_request', `${fieldName} must be zero or greater`);
+  }
+
+  return parsed;
+}
 
 export function buildTableReadQuery(request) {
   const table = ensureTableAllowed(request.table, request.allowedTables);
   const columns = request.columns && request.columns.length > 0
     ? request.columns.map((column) => normalizeColumnName(column)).join(', ')
     : '*';
-  const limit = Math.min(request.limit, request.maxLimit);
-
-  if (limit <= 0) {
-    throw new Error('limit must be greater than zero');
-  }
-
-  const offset = request.offset ?? 0;
-
-  if (offset < 0) {
-    throw new Error('offset must be zero or greater');
-  }
+  const limit = Math.min(
+    normalizePositiveInteger(request.limit, 'limit', request.defaultLimit),
+    request.maxLimit,
+  );
+  const offset = normalizeNonNegativeInteger(request.offset, 'offset', 0);
 
   let sql = `SELECT ${columns} FROM ${table}`;
 
@@ -30,5 +47,5 @@ export function buildTableReadQuery(request) {
     sql += ` OFFSET ${offset}`;
   }
 
-  return { sql };
+  return { sql, limit, offset, table };
 }
