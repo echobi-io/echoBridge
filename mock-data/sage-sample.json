@@ -1,0 +1,40 @@
+{
+  "tables": {
+    "CUSTOMER": {
+      "columns": [
+        { "name": "ACCOUNT_REF", "type": "VARCHAR" },
+        { "name": "NAME", "type": "VARCHAR" },
+        { "name": "BALANCE", "type": "DECIMAL" },
+        { "name": "COUNTRY", "type": "VARCHAR" }
+      ],
+      "rows": [
+        { "ACCOUNT_REF": "ACME001", "NAME": "Acme Ltd", "BALANCE": 1520.25, "COUNTRY": "GB" },
+        { "ACCOUNT_REF": "BETA002", "NAME": "Beta Services", "BALANCE": 310.4, "COUNTRY": "GB" },
+        { "ACCOUNT_REF": "NOVA003", "NAME": "Nova Retail", "BALANCE": 0, "COUNTRY": "IE" }
+      ]
+    },
+    "SALES_LEDGER": {
+      "columns": [
+        { "name": "ACCOUNT_REF", "type": "VARCHAR" },
+        { "name": "INVOICE_NUMBER", "type": "VARCHAR" },
+        { "name": "NET_AMOUNT", "type": "DECIMAL" },
+        { "name": "STATUS", "type": "VARCHAR" }
+      ],
+      "rows": [
+        { "ACCOUNT_REF": "ACME001", "INVOICE_NUMBER": "INV-1001", "NET_AMOUNT": 500.0, "STATUS": "POSTED" },
+        { "ACCOUNT_REF": "BETA002", "INVOICE_NUMBER": "INV-1002", "NET_AMOUNT": 220.15, "STATUS": "DUE" }
+      ]
+    },
+    "STOCK": {
+      "columns": [
+        { "name": "STOCK_CODE", "type": "VARCHAR" },
+        { "name": "DESCRIPTION", "type": "VARCHAR" },
+        { "name": "QTY_IN_STOCK", "type": "INTEGER" }
+      ],
+      "rows": [
+        { "STOCK_CODE": "SKU-001", "DESCRIPTION": "Widget", "QTY_IN_STOCK": 15 },
+        { "STOCK_CODE": "SKU-002", "DESCRIPTION": "Bracket", "QTY_IN_STOCK": 42 }
+      ]
+    }
+  }
+}
