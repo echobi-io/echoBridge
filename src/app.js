@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import http from 'node:http';
 import { URL } from 'node:url';
 import { HttpError, isHttpError } from './errors.js';
-import { SageOdbcClient } from './sage-odbc.js';
+import { createDataClient } from './data-client.js';
 import { authenticateRequest } from './lib/auth.js';
 import { parseColumnList, assertReadOnlySql, ensureTableAllowed } from './lib/query-guards.js';
 import { InMemoryRateLimiter } from './lib/rate-limit.js';
@@ -100,7 +100,7 @@ function routeNotFound(method, pathname) {
   throw new HttpError(404, 'not_found', `No route found for ${method} ${pathname}`);
 }
 
-export function createServer(config, client = new SageOdbcClient(config.odbcConnectionString)) {
+export function createServer(config, client = createDataClient(config)) {
   const rateLimiter = new InMemoryRateLimiter({
     maxRequests: config.rateLimitMaxRequests,
     windowMs: config.rateLimitWindowMs,
@@ -156,6 +156,7 @@ export function createServer(config, client = new SageOdbcClient(config.odbcConn
           environment: config.environment,
           authMode: config.authMode,
           sqlEndpointEnabled: config.enableSqlEndpoint,
+          dataSourceMode: config.dataSourceMode,
           allowedTables: config.allowedTables,
           limits: {
             defaultLimit: config.defaultLimit,

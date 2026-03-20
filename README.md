@@ -39,6 +39,7 @@ If you want the installer to also register the app as a Windows service, run the
 
 ## What the connector does
 
+- Can run against a real Sage ODBC datasource or a built-in mock datasource for local development when you do not have Sage 50 access.
 - Connects to Sage 50c through ODBC on the local Windows host or another machine with the Sage ODBC driver installed.
 - Uses versioned API routes under `/v1`.
 - Defaults to HMAC request signing instead of a static API key.
@@ -327,3 +328,25 @@ npm start
 - The included rate limiter is in-memory. If you run multiple connector instances, enforce rate limits at the reverse proxy or load balancer too.
 - `POST /v1/query` is intentionally disabled by default because arbitrary SQL increases risk.
 - ODBC SQL dialect support varies by Sage driver version; validate table names and syntax against your specific Sage 50c installation.
+
+
+## No Sage 50 access? Use mock mode
+
+If you do not currently have access to a real Sage 50 / ODBC datasource, you can still run echoBridge in a built-in mock mode for development and Supabase integration testing.
+
+Use these settings in `.env`:
+
+```dotenv
+DATA_SOURCE_MODE=mock
+MOCK_DATA_FILE=mock-data/sage-sample.json
+SAGE_ALLOWED_TABLES=CUSTOMER,SALES_LEDGER,STOCK
+```
+
+Then start the service normally with `npm start`. In mock mode:
+
+- `/v1/tables` returns fixture tables from `mock-data/sage-sample.json`,
+- `/v1/tables/:table/schema` returns schema generated from the fixture definition,
+- `/v1/tables/:table/rows` returns sample rows,
+- you can develop the Supabase Edge Function without needing the real Sage server.
+
+This is useful for local testing, demos, and developing the Supabase integration before client credentials or ODBC access are available.

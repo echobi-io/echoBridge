@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { HttpError } from './errors.js';
 
 function parsePositiveInteger(value, fallback, name, max) {
@@ -45,9 +46,14 @@ function parseList(value) {
 
 export function loadConfig(env = process.env) {
   const authMode = env.AUTH_MODE || 'hmac';
+  const dataSourceMode = env.DATA_SOURCE_MODE || 'odbc';
 
-  if (!env.SAGE_ODBC_CONNECTION_STRING) {
-    throw new HttpError(500, 'invalid_config', 'SAGE_ODBC_CONNECTION_STRING is required');
+  if (!['odbc', 'mock'].includes(dataSourceMode)) {
+    throw new HttpError(500, 'invalid_config', 'DATA_SOURCE_MODE must be either "odbc" or "mock"');
+  }
+
+  if (dataSourceMode === 'odbc' && !env.SAGE_ODBC_CONNECTION_STRING) {
+    throw new HttpError(500, 'invalid_config', 'SAGE_ODBC_CONNECTION_STRING is required when DATA_SOURCE_MODE=odbc');
   }
 
   if (!['api-key', 'hmac'].includes(authMode)) {
@@ -73,7 +79,9 @@ export function loadConfig(env = process.env) {
     environment: env.NODE_ENV || 'production',
     port: parsePositiveInteger(env.PORT, 8787, 'PORT'),
     host: env.HOST || '0.0.0.0',
-    odbcConnectionString: env.SAGE_ODBC_CONNECTION_STRING,
+    dataSourceMode,
+    odbcConnectionString: env.SAGE_ODBC_CONNECTION_STRING || '',
+    mockDataFile: env.MOCK_DATA_FILE || path.join('mock-data', 'sage-sample.json'),
     allowedTables: parseList(env.SAGE_ALLOWED_TABLES).map((entry) => entry.toUpperCase()),
     defaultLimit: parsePositiveInteger(env.SAGE_DEFAULT_LIMIT, 100, 'SAGE_DEFAULT_LIMIT', 1000),
     maxLimit: parsePositiveInteger(env.SAGE_MAX_LIMIT, 1000, 'SAGE_MAX_LIMIT', 10000),

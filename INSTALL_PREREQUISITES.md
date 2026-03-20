@@ -95,3 +95,13 @@ Make sure you have all of the following:
 - [ ] Supabase CLI installed (if deploying the example function)
 - [ ] HTTPS endpoint plan for exposing echoBridge to Supabase
 - [ ] NSSM installed if you want echoBridge as a Windows service
+
+
+## Optional shortcut for development: mock mode
+
+If you only want to test echoBridge or the Supabase integration and you do not have access to Sage 50 yet, you can skip the Sage prerequisites temporarily and run in mock mode using the bundled fixture file:
+
+- `DATA_SOURCE_MODE=mock`
+- `MOCK_DATA_FILE=mock-data/sage-sample.json`
+
+Mock mode is for development/testing only; production should use the real Sage ODBC datasource.
